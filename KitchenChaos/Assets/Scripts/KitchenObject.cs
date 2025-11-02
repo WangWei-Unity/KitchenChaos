@@ -9,7 +9,7 @@ public class KitchenObject : MonoBehaviour
 
 
     /// <summary>
-    ///  给外部相关厨房物体的SO数据
+    /// 给外部相关厨房物体的SO数据
     /// </summary>
     public KitchenObjectSO GetKitchenObjectSO()
     {
@@ -17,12 +17,12 @@ public class KitchenObject : MonoBehaviour
     }
 
     /// <summary>
-    /// 给外部用来设置该厨房物体的 父柜子
+    /// 给外部用来设置该厨房物体的 父对象（柜子或玩家）
     /// </summary>
     /// <param name="kitchenObjectParent"></param>
     public void SetKitchenObjectParent(IKitchenObjectParent kitchenObjectParent)
     {
-        //离开当前柜子 就要把当前柜子上的物体（数据）清空
+        //离开当前父对象 就要把当前父对象上的物体（数据）清空
         if (this.kitchenObjectParent != null)
         {
             this.kitchenObjectParent.ClearKitchenObject();
@@ -35,7 +35,7 @@ public class KitchenObject : MonoBehaviour
             Debug.LogError("这个柜子上已经有其它物体了");
         }
 
-        //更新当前放置柜子上的 物体数据
+        //更新当前放置父对象上的 物体数据
         kitchenObjectParent.SetKitchenObject(this);
 
         this.transform.parent = kitchenObjectParent.GetKitchenObjectFollowTransform();
@@ -45,5 +45,29 @@ public class KitchenObject : MonoBehaviour
     public IKitchenObjectParent GetClearCounter()
     {
         return kitchenObjectParent;
+    }
+
+    /// <summary>
+    /// 处理切割物体的逻辑
+    /// </summary>
+    public void DestroySelf()
+    {
+        kitchenObjectParent.ClearKitchenObject();
+        Destroy(gameObject);
+    }
+
+
+
+    /// <summary>
+    /// 产生一个物体的静态方法
+    /// </summary>
+    /// <returns></returns>
+    public static KitchenObject SpawnKitchenObject(KitchenObjectSO kitchenObjectSO, IKitchenObjectParent kitchenObjectParent)
+    {
+        Transform kitchenObjectTransform = Instantiate(kitchenObjectSO.prefab);
+        KitchenObject kitchenObject = kitchenObjectTransform.GetComponent<KitchenObject>();
+        kitchenObject.SetKitchenObjectParent(kitchenObjectParent);
+
+        return kitchenObject;
     }
 }

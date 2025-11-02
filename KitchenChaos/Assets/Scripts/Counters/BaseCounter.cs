@@ -1,29 +1,29 @@
-using NUnit.Framework.Internal;
 using UnityEngine;
 
-public class ClearCounter : MonoBehaviour, IKitchenObjectParent
+public class BaseCounter : MonoBehaviour, IKitchenObjectParent
 {
-    [SerializeField] private KitchenObjectSO kitchenObjectSO;
     [SerializeField] private Transform counterTopPoint;
 
     private KitchenObject kitchenObject;
 
     /// <summary>
-    /// 玩家与柜子的交互逻辑
+    /// 普通柜子与玩家间的交互
     /// </summary>
-    public void Interact(Player player)
+    /// <param name="player"></param>
+    public virtual void Interact(Player player)
     {
-        //如果当前柜子上没有物体 就创建一个SO里存储的物体
-        if (kitchenObject == null)
-        {
-            Transform kitchenObjectTransform = Instantiate(kitchenObjectSO.prefab, counterTopPoint);
-            kitchenObjectTransform.GetComponent<KitchenObject>().SetKitchenObjectParent(this);
-        }
-        //如果当前柜子上有物体了 就让玩家拾取这个物体
-        else
-        {
-            kitchenObject.SetKitchenObjectParent(player);
-        }
+        //避免子类没有重写该方法 导致调用时出现问题
+        Debug.Log("BaseCounter.Interact();");
+    }
+
+    /// <summary>
+    /// 切割柜子与玩家间的交互
+    /// </summary>
+    /// <param name="player"></param>
+    public virtual void InteractAlternate(Player player)
+    {
+        //避免子类没有重写该方法 导致调用时出现问题
+        Debug.Log("BaseCounter.InteractAlternate();");
     }
 
     /// <summary>
@@ -53,7 +53,7 @@ public class ClearCounter : MonoBehaviour, IKitchenObjectParent
     }
 
     /// <summary>
-    /// 当有物体离开柜子时 清空规则上的物体数据
+    /// 当有物体离开柜子时 清空柜子上的物体数据
     /// </summary>
     public void ClearKitchenObject()
     {

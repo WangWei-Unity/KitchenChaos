@@ -11,18 +11,19 @@ public class Player : MonoBehaviour, IKitchenObjectParent
 
     void Awake()
     {
-        if(instance != null)
+        if (instance != null)
         {
             Debug.LogError("This is more than one Player instance");
         }
         instance = this;
     }
 
+    //用于处理玩家靠近柜子时 柜子的闪烁
     public event EventHandler<OnSelectedCounterChangeEventArgs> OnSelectedCounterChange;
     public class OnSelectedCounterChangeEventArgs : EventArgs
     {
-        public ClearCounter selectedCounter;
-        public OnSelectedCounterChangeEventArgs(ClearCounter selectedCounter)
+        public BaseCounter selectedCounter;
+        public OnSelectedCounterChangeEventArgs(BaseCounter selectedCounter)
         {
             this.selectedCounter = selectedCounter;
         }
@@ -40,12 +41,26 @@ public class Player : MonoBehaviour, IKitchenObjectParent
 
     private bool isWalking = false;
     private Vector3 lastInteractDir;
-    private ClearCounter selectedCounter;
+    private BaseCounter selectedCounter;
     private KitchenObject kitchenObject;
 
     void Start()
     {
         GameInput.Instance.OnInteractAction += GameInput_OnInteractAction;
+        GameInput.Instance.OnInteractAlternateAction += GameInput_OnInteractAlternateAction;
+    }
+
+    /// <summary>
+    /// 与切割柜子的交互 f键
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    private void GameInput_OnInteractAlternateAction(object sender, System.EventArgs e)
+    {
+        if (selectedCounter != null)
+        {
+            selectedCounter.InteractAlternate(this);
+        }
     }
 
     /// <summary>
@@ -92,12 +107,12 @@ public class Player : MonoBehaviour, IKitchenObjectParent
         {
             //不要用“危险”的标签来做判断
             //TryGetComponent相比GetComponent帮助我们进行了判空处理
-            if (raycastHit.transform.TryGetComponent(out ClearCounter clearCounter))
+            if (raycastHit.transform.TryGetComponent(out BaseCounter baseCounter))
             {
                 //得到ClearCounter
-                if (clearCounter != selectedCounter)
+                if (baseCounter != selectedCounter)
                 {
-                    SetSelectedCounter(clearCounter);
+                    SetSelectedCounter(baseCounter);
                 }
             }
             else
@@ -131,10 +146,10 @@ public class Player : MonoBehaviour, IKitchenObjectParent
             //这是为了防止向斜方向进行移动时，由于检测到物体而导致无法正常移动
             //正常情况下，应该沿着平行于被检测到物体的方向进行移动
             Vector3 moveDirX = new Vector3(moveDir.x, 0, 0).normalized;
-            bool canMoveX = !Physics.CapsuleCast(this.transform.position, this.transform.position + Vector3.up * playerHeight, playerRadius, moveDirX, moveDistance);
+            bool canMoveX = moveDir.x != 0 && !Physics.CapsuleCast(this.transform.position, this.transform.position + Vector3.up * playerHeight, playerRadius, moveDirX, moveDistance);
             //尝试只在z方向上移动
             Vector3 moveDirZ = new Vector3(0, 0, moveDir.z).normalized;
-            bool canmoveZ = !Physics.CapsuleCast(this.transform.position, this.transform.position + Vector3.up * playerHeight, playerRadius, moveDirZ, moveDistance);
+            bool canMoveZ = moveDir.z != 0 && !Physics.CapsuleCast(this.transform.position, this.transform.position + Vector3.up * playerHeight, playerRadius, moveDirZ, moveDistance);
 
             if (canMoveX)
             {
@@ -142,7 +157,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent
                 canMove = true;
                 moveDir = moveDirX;
             }
-            if (canmoveZ)
+            if (canMoveZ)
             {
                 //可以在z方向上移动
                 canMove = true;
@@ -172,7 +187,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent
     /// 设置当前射线检测到的柜子 并执行切换柜子时的事件
     /// </summary>
     /// <param name="selectedCounter"></param>
-    private void SetSelectedCounter(ClearCounter selectedCounter)
+    private void SetSelectedCounter(BaseCounter selectedCounter)
     {
         this.selectedCounter = selectedCounter;
         OnSelectedCounterChange?.Invoke(this, new OnSelectedCounterChangeEventArgs(selectedCounter));
@@ -187,7 +202,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent
     }
 
     /// <summary>
-    /// 当有新物体放到桌子上时 及时更改kitchenObject的数据
+    /// 当有新物体放到玩家身上时 及时更改kitchenObject的数据
     /// </summary>
     /// <param name="kitchenObject"></param>
     public void SetKitchenObject(KitchenObject kitchenObject)
@@ -205,7 +220,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent
     }
 
     /// <summary>
-    /// 当有物体离开柜子时 清空规则上的物体数据
+    /// 当有物体离开玩家时 清空玩家上的物体数据
     /// </summary>
     public void ClearKitchenObject()
     {
@@ -213,8 +228,8 @@ public class Player : MonoBehaviour, IKitchenObjectParent
     }
 
     /// <summary>
-    /// 判断当前的柜子上是否已经放了物体了
-    /// 空柜子上才可以放物体
+    /// 判断当前玩家身上是否已经放了物体了
+    /// 玩家空手才可以放物体
     /// </summary>
     /// <returns></returns>
     public bool HasKitchenObject()

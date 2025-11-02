@@ -8,7 +8,11 @@ public class GameInput : MonoBehaviour
 
     public static GameInput Instance => instance;
 
+    //处理玩家靠近柜台 按e交互事件
     public event EventHandler OnInteractAction;
+    //处理切割物体后 物体的模型切换事件
+    public event EventHandler OnInteractAlternateAction;
+
 
     [SerializeField] private PlayerInput playerInput;
 
@@ -36,6 +40,9 @@ public class GameInput : MonoBehaviour
                         //第一个参数：触发事件的对象
                         //第二个参数：事件参数 在这不需要传递任何额外数据
                         OnInteractAction?.Invoke(this, EventArgs.Empty);
+                        break;
+                    case "InteractAlternate":
+                        OnInteractAlternateAction?.Invoke(this, EventArgs.Empty);
                         break;
                 }
             }
