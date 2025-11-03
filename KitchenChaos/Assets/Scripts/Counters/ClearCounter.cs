@@ -25,9 +25,29 @@ public class ClearCounter : BaseCounter
         }
         else
         {
+            //如果柜子上有物体 玩家手上的东西可以和柜子上的东西组合在一起的逻辑
             if (player.HasKitchenObject())
             {
-
+                //如果玩家手上拿着盘子 就把柜子上的物体移动到玩家的盘子上
+                if(player.GetKitchenObject().TryGetPlate(out PlateKitchenObject plateKitchenObject))
+                {
+                    //成功添加才销毁桌子上的物体
+                    if (plateKitchenObject.TryAddIngredient(GetKitchenObject().GetKitchenObjectSO()))
+                    {
+                        GetKitchenObject().DestroySelf();
+                    }
+                }
+                else
+                {
+                    //如果玩家手上拿的不是盘子 而柜子上是盘子 将玩家手上的物体放置到柜子上
+                    if(GetKitchenObject().TryGetPlate(out plateKitchenObject))
+                    {
+                        if (plateKitchenObject.TryAddIngredient(player.GetKitchenObject().GetKitchenObjectSO()))
+                        {
+                            player.GetKitchenObject().DestroySelf();
+                        }
+                    }
+                }
             }
             //如果柜子上有物体 玩家空手
             //则将柜子上的物体移动到玩家身上

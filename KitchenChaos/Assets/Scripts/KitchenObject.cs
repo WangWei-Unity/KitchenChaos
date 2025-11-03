@@ -56,6 +56,25 @@ public class KitchenObject : MonoBehaviour
         Destroy(gameObject);
     }
 
+    /// <summary>
+    /// 判断当前物体是否是盘子
+    /// </summary>
+    /// <param name="plateKitchenObject"></param>
+    /// <returns></returns>
+    public bool TryGetPlate(out PlateKitchenObject plateKitchenObject)
+    {
+        if(this is PlateKitchenObject)
+        {
+            plateKitchenObject = this as PlateKitchenObject;
+            return true;
+        }
+        else
+        {
+            plateKitchenObject = null;
+            return false;
+        }
+    }
+
 
 
     /// <summary>

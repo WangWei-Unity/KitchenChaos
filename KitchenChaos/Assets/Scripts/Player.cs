@@ -18,6 +18,9 @@ public class Player : MonoBehaviour, IKitchenObjectParent
         instance = this;
     }
 
+    //拾取物体时的音效事件
+    public event EventHandler OnPickupSomething;
+
     //用于处理玩家靠近柜子时 柜子的闪烁
     public event EventHandler<OnSelectedCounterChangeEventArgs> OnSelectedCounterChange;
     public class OnSelectedCounterChangeEventArgs : EventArgs
@@ -57,6 +60,9 @@ public class Player : MonoBehaviour, IKitchenObjectParent
     /// <param name="e"></param>
     private void GameInput_OnInteractAlternateAction(object sender, System.EventArgs e)
     {
+        //不在游戏时间不可以交互
+        if (!KitchenGameManager.Instance.IsGamePlaying()) return;
+
         if (selectedCounter != null)
         {
             selectedCounter.InteractAlternate(this);
@@ -70,6 +76,9 @@ public class Player : MonoBehaviour, IKitchenObjectParent
     /// <param name="e"></param>
     private void GameInput_OnInteractAction(object sender, System.EventArgs e)
     {
+        //不在游戏时间不可以交互
+        if (!KitchenGameManager.Instance.IsGamePlaying()) return;
+
         if (selectedCounter != null)
         {
             selectedCounter.Interact(this);
@@ -78,6 +87,13 @@ public class Player : MonoBehaviour, IKitchenObjectParent
 
     void Update()
     {
+        //不在游戏时间不可以交互
+        if (!KitchenGameManager.Instance.IsGamePlaying())
+        {
+            isWalking = false;
+            return;
+        }
+
         HandleMovement();
         HandleInteractions();
     }
@@ -208,6 +224,11 @@ public class Player : MonoBehaviour, IKitchenObjectParent
     public void SetKitchenObject(KitchenObject kitchenObject)
     {
         this.kitchenObject = kitchenObject;
+
+        if (kitchenObject != null)
+        {
+            OnPickupSomething?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     /// <summary>
