@@ -6,6 +6,11 @@ public class BaseCounter : MonoBehaviour, IKitchenObjectParent
     //当物体放置时播放音效的事件
     public static event EventHandler OnAnyObjectPlacedHere;
 
+    public static void ResetStaticData()
+    {
+        OnAnyObjectPlacedHere = null;
+    }
+
     [SerializeField] private Transform counterTopPoint;
 
     private KitchenObject kitchenObject;

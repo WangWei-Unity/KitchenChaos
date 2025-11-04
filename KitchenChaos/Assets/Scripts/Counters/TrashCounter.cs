@@ -6,6 +6,11 @@ public class TrashCounter : BaseCounter
     //当物体被丢掉时 播放的音效
     public static event EventHandler OnAnyObjectTrashed;
 
+    new public static void ResetStaticData()
+    {
+        OnAnyObjectTrashed = null;
+    }
+
     /// <summary>
     /// 玩家与垃圾桶的交互逻辑
     /// </summary>

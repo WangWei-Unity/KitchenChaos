@@ -47,8 +47,15 @@ public class Player : MonoBehaviour, IKitchenObjectParent
     private BaseCounter selectedCounter;
     private KitchenObject kitchenObject;
 
+    private PlayerInput playerInput;
+
     void Start()
     {
+        playerInput = this.GetComponent<PlayerInput>();
+
+        playerInput.actions = DataManager.Instance.GetActionAsset();
+        playerInput.actions.Enable();
+
         GameInput.Instance.OnInteractAction += GameInput_OnInteractAction;
         GameInput.Instance.OnInteractAlternateAction += GameInput_OnInteractAlternateAction;
     }
@@ -162,10 +169,10 @@ public class Player : MonoBehaviour, IKitchenObjectParent
             //这是为了防止向斜方向进行移动时，由于检测到物体而导致无法正常移动
             //正常情况下，应该沿着平行于被检测到物体的方向进行移动
             Vector3 moveDirX = new Vector3(moveDir.x, 0, 0).normalized;
-            bool canMoveX = moveDir.x != 0 && !Physics.CapsuleCast(this.transform.position, this.transform.position + Vector3.up * playerHeight, playerRadius, moveDirX, moveDistance);
+            bool canMoveX = (moveDir.x < -.5f || moveDir.x > .5f) && !Physics.CapsuleCast(this.transform.position, this.transform.position + Vector3.up * playerHeight, playerRadius, moveDirX, moveDistance);
             //尝试只在z方向上移动
             Vector3 moveDirZ = new Vector3(0, 0, moveDir.z).normalized;
-            bool canMoveZ = moveDir.z != 0 && !Physics.CapsuleCast(this.transform.position, this.transform.position + Vector3.up * playerHeight, playerRadius, moveDirZ, moveDistance);
+            bool canMoveZ = (moveDir.z < -.5f || moveDir.z > .5f) && !Physics.CapsuleCast(this.transform.position, this.transform.position + Vector3.up * playerHeight, playerRadius, moveDirZ, moveDistance);
 
             if (canMoveX)
             {
@@ -256,5 +263,15 @@ public class Player : MonoBehaviour, IKitchenObjectParent
     public bool HasKitchenObject()
     {
         return kitchenObject != null;
+    }
+
+    /// <summary>
+    /// 让玩家产生改键效果
+    /// </summary>
+    public void ChangeInput()
+    {
+        //改键就是改变 我们PlayerInput上关联的输入配置信息
+        playerInput.actions = DataManager.Instance.GetActionAsset();
+        playerInput.actions.Enable();
     }
 }

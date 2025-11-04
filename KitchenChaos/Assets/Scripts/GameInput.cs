@@ -12,6 +12,8 @@ public class GameInput : MonoBehaviour
     public event EventHandler OnInteractAction;
     //处理切割物体后 物体的模型切换事件
     public event EventHandler OnInteractAlternateAction;
+    //按下ESC暂停键后 处理的事件
+    public event EventHandler OnPauseAction;
 
 
     [SerializeField] private PlayerInput playerInput;
@@ -43,6 +45,9 @@ public class GameInput : MonoBehaviour
                         break;
                     case "InteractAlternate":
                         OnInteractAlternateAction?.Invoke(this, EventArgs.Empty);
+                        break;
+                    case "Pause":
+                        OnPauseAction?.Invoke(this, EventArgs.Empty);
                         break;
                 }
             }

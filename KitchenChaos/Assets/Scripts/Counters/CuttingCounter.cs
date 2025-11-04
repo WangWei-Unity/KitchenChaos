@@ -7,6 +7,12 @@ public class CuttingCounter : BaseCounter, IHasProgress
     //当在任意柜子上进行切割时 都会播放音效的事件
     public static event EventHandler OnAnyCut;
 
+    new public static void ResetStaticData()
+    {
+        OnAnyCut = null;
+    }
+
+
     //当切片时 进度条变化的事件
     public event EventHandler<IHasProgress.OnProgressChangedEventArgs> OnProgressChanged;
     //处理切割动画播放的事件 刚放上物体的时候不播放切割动画

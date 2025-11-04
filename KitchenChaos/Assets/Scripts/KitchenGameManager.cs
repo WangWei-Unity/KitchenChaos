@@ -1,4 +1,6 @@
 using System;
+using Unity.Mathematics;
+using UnityEditor;
 using UnityEngine;
 
 public class KitchenGameManager : MonoBehaviour
@@ -9,6 +11,10 @@ public class KitchenGameManager : MonoBehaviour
 
     //状态切换时的事件
     public event EventHandler OnStateChanged;
+    //暂停时处理的事件
+    public event EventHandler OnGamePaused;
+    //取消暂停时处理的事件
+    public event EventHandler OnGameUnpaused;
 
     private enum State
     {
@@ -25,12 +31,31 @@ public class KitchenGameManager : MonoBehaviour
     private float gamePlayingTimer = 10f;
     private float gamePlayingTimerMax = 10f;
 
-
+    private bool isGamePause = false;
 
     void Awake()
     {
         instance = this;
         state = State.WaitingToStart;
+    }
+
+    void Start()
+    {
+        GameInput.Instance.OnPauseAction += GameInput_OnPauseAction;
+    }
+
+    /// <summary>
+    /// 按下暂停键的处理
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    private void GameInput_OnPauseAction(object sender, EventArgs e)
+    {
+        //当前状态不为游戏结束 才可以暂停
+        if (state != State.GameOver)
+        {
+            TogglePauseGame();
+        }
     }
 
     void Update()
@@ -65,7 +90,6 @@ public class KitchenGameManager : MonoBehaviour
             case State.GameOver:
                 break;
         }
-        Debug.Log(state);
     }
 
     /// <summary>
@@ -111,5 +135,23 @@ public class KitchenGameManager : MonoBehaviour
     public float GetGamePlayingTimerNormalized()
     {
         return 1 - (float)gamePlayingTimer / gamePlayingTimerMax;
+    }
+
+    /// <summary>
+    /// 暂停游戏的处理
+    /// </summary>
+    public void TogglePauseGame()
+    {
+        isGamePause = !isGamePause;
+        if (isGamePause)
+        {
+            Time.timeScale = 0;
+            OnGamePaused?.Invoke(this, EventArgs.Empty);
+        }
+        else
+        {
+            Time.timeScale = 1f;
+            OnGameUnpaused?.Invoke(this, EventArgs.Empty);
+        }
     }
 }

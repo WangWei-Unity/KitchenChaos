@@ -57,7 +57,7 @@
                 {
                     "name": "up",
                     "id": "03173a11-b808-4a82-a57b-6ce6fdd0d091",
-                    "path": "<Keyboard>/w",
+                    "path": "<moveUp>",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -68,7 +68,7 @@
                 {
                     "name": "down",
                     "id": "48bc301b-fea3-4fe7-9bfc-7c4ba290e70f",
-                    "path": "<Keyboard>/s",
+                    "path": "<moveDown>",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -79,7 +79,7 @@
                 {
                     "name": "left",
                     "id": "1d436ca1-59a0-4f30-b7f6-8a2eed694dc6",
-                    "path": "<Keyboard>/a",
+                    "path": "<moveLeft>",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -90,7 +90,7 @@
                 {
                     "name": "right",
                     "id": "78099bd9-3c4e-440e-bfa1-7dffcb388da7",
-                    "path": "<Keyboard>/d",
+                    "path": "<moveRight>",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -158,7 +158,7 @@
                     "id": "27c510ab-fa04-4491-b4ae-c9dd15e645db",
                     "path": "<Gamepad>/leftStick",
                     "interactions": "",
-                    "processors": "StickDeadzone",
+                    "processors": "",
                     "groups": "",
                     "action": "Move",
                     "isComposite": false,
@@ -167,7 +167,7 @@
                 {
                     "name": "",
                     "id": "9e88d39f-a5bb-4b36-bc4f-7fe97645dfa3",
-                    "path": "<Keyboard>/e",
+                    "path": "<interact>",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -189,7 +189,7 @@
                 {
                     "name": "",
                     "id": "33ea8b6b-75b9-4ee0-9b4d-d896b746e053",
-                    "path": "<Keyboard>/f",
+                    "path": "<interactAlternate>",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -211,7 +211,7 @@
                 {
                     "name": "",
                     "id": "4e037c19-a44f-496a-b837-bfc92184d0bd",
-                    "path": "<Keyboard>/escape",
+                    "path": "<pause>",
                     "interactions": "",
                     "processors": "",
                     "groups": "",

@@ -3,6 +3,8 @@ using UnityEngine;
 
 public class SoundManager : MonoBehaviour
 {
+    private const string PALYER_PREFS_SOUND_EFFECTS_VOLUME = "SoundEffectsVolume";
+
     private static SoundManager instance;
 
     public static SoundManager Instance => instance;
@@ -10,9 +12,13 @@ public class SoundManager : MonoBehaviour
     void Awake()
     {
         instance = this;
+
+        volume = PlayerPrefs.GetFloat(PALYER_PREFS_SOUND_EFFECTS_VOLUME, 1f);
     }
 
     [SerializeField] private AudioClipRefsSO audioClipRefsSO;
+
+    private float volume = 1f;
 
     void Start()
     {
@@ -103,9 +109,9 @@ public class SoundManager : MonoBehaviour
     /// <param name="audioClip"></param>
     /// <param name="position"></param>
     /// <param name="volume"></param>
-    private void PlayeSound(AudioClip audioClip, Vector3 position, float volume = 1f)
+    private void PlayeSound(AudioClip audioClip, Vector3 position, float volumeMultiplier = 1f)
     {
-        AudioSource.PlayClipAtPoint(audioClip, position, volume);
+        AudioSource.PlayClipAtPoint(audioClip, position, volumeMultiplier * volume);
     }
 
     /// <summary>
@@ -115,5 +121,29 @@ public class SoundManager : MonoBehaviour
     public void PlayFootstepSound(Vector3 position, float volume = 1f)
     {
         PlayeSound(audioClipRefsSO.footStep, position, volume);
+    }
+
+    /// <summary>
+    /// 调节音效大小
+    /// </summary>
+    public void ChangeVolume()
+    {
+        volume += .1f;
+        if (volume > 1f)
+        {
+            volume = 0;
+        }
+
+        PlayerPrefs.SetFloat(PALYER_PREFS_SOUND_EFFECTS_VOLUME, volume);
+        PlayerPrefs.Save();
+    }
+    
+    /// <summary>
+    /// 获得音效大小
+    /// </summary>
+    /// <returns></returns>
+    public float GetVolume()
+    {
+        return volume;
     }
 }
