@@ -49,7 +49,7 @@ public class StoveCounter : BaseCounter, IHasProgress
                 //油炸逻辑
                 case State.Frying:
                     fryingTimer += Time.deltaTime;
-                    
+
                     //油炸进度条
                     OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs
                     {
@@ -75,7 +75,7 @@ public class StoveCounter : BaseCounter, IHasProgress
                 //烧焦处理
                 case State.Fried:
                     burningTimer += Time.deltaTime;
-                    
+
                     //油炸进度条
                     OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs
                     {
@@ -105,7 +105,7 @@ public class StoveCounter : BaseCounter, IHasProgress
                 case State.Burned:
                     break;
             }
-        }    
+        }   
     }
 
     /// <summary>
@@ -241,7 +241,7 @@ public class StoveCounter : BaseCounter, IHasProgress
         }
         return null;
     }
-    
+
     /// <summary>
     /// 获得油炸后的物体 归属的BurningRecipeSO的数据
     /// </summary>
@@ -257,5 +257,13 @@ public class StoveCounter : BaseCounter, IHasProgress
             }
         }
         return null;
+    }
+
+    /// <summary>
+    /// 判断当前是不是要炸焦的状态
+    /// </summary>
+    public bool isFried()
+    {
+        return state == State.Fried;
     }
 }

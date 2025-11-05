@@ -58,6 +58,9 @@ public class OptionsUI : MonoBehaviour
 
     private GameInputInfo gameInputInfo;
 
+    //每次改建后 传给外部的事件
+    public event EventHandler OnBindingRebind;
+
     void Awake()
     {
         instance = this;
@@ -206,6 +209,8 @@ public class OptionsUI : MonoBehaviour
 
         //让玩家产生改键效果
         Player.Instance.ChangeInput();
+
+        OnBindingRebind?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>

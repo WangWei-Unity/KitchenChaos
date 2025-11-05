@@ -94,6 +94,8 @@ public class Player : MonoBehaviour, IKitchenObjectParent
 
     void Update()
     {
+        GameInput.Instance.GetMovementVectorNormalized();
+
         //不在游戏时间不可以交互
         if (!KitchenGameManager.Instance.IsGamePlaying())
         {

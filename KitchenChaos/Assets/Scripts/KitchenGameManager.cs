@@ -25,11 +25,10 @@ public class KitchenGameManager : MonoBehaviour
     }
 
     private State state;
-    private float waitingToStartTimer = 1f;
     private float countdownToStartTimer = 3f;
 
-    private float gamePlayingTimer = 10f;
-    private float gamePlayingTimerMax = 10f;
+    private float gamePlayingTimer = 90f;
+    private float gamePlayingTimerMax = 90f;
 
     private bool isGamePause = false;
 
@@ -42,6 +41,21 @@ public class KitchenGameManager : MonoBehaviour
     void Start()
     {
         GameInput.Instance.OnPauseAction += GameInput_OnPauseAction;
+        GameInput.Instance.OnInteractAction += GameInput_OnInteractAction;
+    }
+
+    /// <summary>
+    /// 按下交互键 退出等待开始阶段
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    private void GameInput_OnInteractAction(object sender, EventArgs e)
+    {
+        if(state == State.WaitingToStart)
+        {
+            state = State.CountdownToStart;
+            OnStateChanged?.Invoke(this, EventArgs.Empty);
+        }  
     }
 
     /// <summary>
@@ -51,8 +65,8 @@ public class KitchenGameManager : MonoBehaviour
     /// <param name="e"></param>
     private void GameInput_OnPauseAction(object sender, EventArgs e)
     {
-        //当前状态不为游戏结束 才可以暂停
-        if (state != State.GameOver)
+        //当前状态为游戏阶段或倒计时阶段 才可以暂停
+        if (state == State.GamePlaying || state == State.CountdownToStart)
         {
             TogglePauseGame();
         }
@@ -63,12 +77,6 @@ public class KitchenGameManager : MonoBehaviour
         switch (state)
         {
             case State.WaitingToStart:
-                waitingToStartTimer -= Time.deltaTime;
-                if (waitingToStartTimer <= 0)
-                {
-                    state = State.CountdownToStart;
-                    OnStateChanged?.Invoke(this, EventArgs.Empty);
-                }
                 break;
             case State.CountdownToStart:
                 countdownToStartTimer -= Time.deltaTime;
@@ -108,6 +116,15 @@ public class KitchenGameManager : MonoBehaviour
     public bool IsCountdownToStartActive()
     {
         return state == State.CountdownToStart;
+    }
+
+    /// <summary>
+    /// 判断当前是不是等待开始阶段
+    /// </summary>
+    /// <returns></returns>
+    public bool IsWaitingToStarttActive()
+    {
+        return state == State.WaitingToStart;
     }
 
     /// <summary>

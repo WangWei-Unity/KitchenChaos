@@ -124,6 +124,24 @@ public class SoundManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 专门处理倒计时的声音
+    /// </summary>
+    /// <param name="position"></param>
+    public void PlayCountdownSound()
+    {
+        PlayeSound(audioClipRefsSO.warning, Vector3.zero);
+    }
+
+    /// <summary>
+    /// 专门处理警告的声音
+    /// </summary>
+    /// <param name="position"></param>
+    public void PlayWarningSound(Vector3 position)
+    {
+        PlayeSound(audioClipRefsSO.warning, position);
+    }
+
+    /// <summary>
     /// 调节音效大小
     /// </summary>
     public void ChangeVolume()
