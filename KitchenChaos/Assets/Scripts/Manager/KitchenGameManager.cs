@@ -25,10 +25,10 @@ public class KitchenGameManager : MonoBehaviour
     }
 
     private State state;
-    private float countdownToStartTimer = 3f;
+    private float countdownToStartTimer = 1f;
 
-    private float gamePlayingTimer = 90f;
-    private float gamePlayingTimerMax = 90f;
+    private float gamePlayingTimer = 300f;
+    private float gamePlayingTimerMax = 300f;
 
     private bool isGamePause = false;
 
@@ -42,6 +42,10 @@ public class KitchenGameManager : MonoBehaviour
     {
         GameInput.Instance.OnPauseAction += GameInput_OnPauseAction;
         GameInput.Instance.OnInteractAction += GameInput_OnInteractAction;
+
+        //测试代码 直接进入倒计时环节
+        state = State.CountdownToStart;
+        OnStateChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>

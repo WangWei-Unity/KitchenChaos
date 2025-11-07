@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
-public class DeliveryManager : MonoBehaviour
+public class DeliveryManager : NetworkBehaviour
 {
     //创建订单后ui的事件
     public event EventHandler OnRecipeSpawned;
@@ -20,7 +21,7 @@ public class DeliveryManager : MonoBehaviour
     //需要处理的订单
     [SerializeField] private RecipeListSO recipeListSO;
     private List<RecipeSO> waitingRecipeSOList;
-    private float spawnRecipeTimer;
+    private float spawnRecipeTimer = 4f;
     private float spawnRecipeTimerMax = 4f;
     private int waitingRecipesMax = 4;
     private int successfulRecipesAmount = 0;
@@ -36,6 +37,8 @@ public class DeliveryManager : MonoBehaviour
     /// </summary>
     void Update()
     {
+        if (!IsServer) return;
+
         //游戏没有开始 不生成订单
         if (!KitchenGameManager.Instance.IsGamePlaying()) return;
 
@@ -46,13 +49,26 @@ public class DeliveryManager : MonoBehaviour
             {
                 spawnRecipeTimer = spawnRecipeTimerMax;
 
-                RecipeSO waitingRecipeSO = recipeListSO.RecipeSOList[UnityEngine.Random.Range(0, recipeListSO.RecipeSOList.Count)];
+                int waitingRecipeSOIndex = UnityEngine.Random.Range(0, recipeListSO.RecipeSOList.Count);
 
-                waitingRecipeSOList.Add(waitingRecipeSO);
-
-                OnRecipeSpawned?.Invoke(this, EventArgs.Empty);
+                SpawnNewWaitingRecipeClientRpc(waitingRecipeSOIndex);
             }
         }
+    }
+
+    /// <summary>
+    /// 通过ClientRpc让客户端订单与服务器一致
+    /// </summary>
+    /// <param name="waitingRecipeSOIndex"></param>
+    [ClientRpc]
+    private void SpawnNewWaitingRecipeClientRpc(int waitingRecipeSOIndex)
+    {
+
+        RecipeSO waitingRecipeSO = recipeListSO.RecipeSOList[waitingRecipeSOIndex];
+        
+        waitingRecipeSOList.Add(waitingRecipeSO);
+
+        OnRecipeSpawned?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -92,21 +108,57 @@ public class DeliveryManager : MonoBehaviour
                 //成功匹配
                 if (plateContentMatchesRecipe)
                 {
-                    successfulRecipesAmount++;
-
-                    //匹配后将该配方移除
-                    waitingRecipeSOList.RemoveAt(i);
-
-                    OnRecipeCompleted?.Invoke(this, EventArgs.Empty);
-                    OnRecipeSuccess?.Invoke(this, EventArgs.Empty);
+                    DeliveryCorrectRecipeServerRpc(i);
                     return true;
                 }
             }
         }
 
         //没有可以匹配的
-        OnRecipeFailed?.Invoke(this, EventArgs.Empty);
+        DeliveryIncorrectRecipeServerRpc();
         return false;
+    }
+
+    /// <summary>
+    /// 通过ServerRpc让 服务器收到的所有客户端的提交正确的信息
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void DeliveryCorrectRecipeServerRpc(int waitingRecipeSOListIndex)
+    {
+        DeliveryCorrectRecipeClientRpc(waitingRecipeSOListIndex);
+    }
+
+    /// <summary>
+    /// 通过ClientRpc 让服务器把接收到的正确提交信息 传输给所有客户端
+    /// </summary>
+    [ClientRpc]
+    private void DeliveryCorrectRecipeClientRpc(int waitingRecipeSOListIndex)
+    {
+        successfulRecipesAmount++;
+
+        //匹配后将该配方移除
+        waitingRecipeSOList.RemoveAt(waitingRecipeSOListIndex);
+
+        OnRecipeCompleted?.Invoke(this, EventArgs.Empty);
+        OnRecipeSuccess?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// 通过ServerRpc让 服务器收到的所有客户端的提交不正确的信息
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void DeliveryIncorrectRecipeServerRpc()
+    {
+        DeliveryIncorrectRecipeClientRpc();
+    }
+
+    /// <summary>
+    /// 通过ClientRpc 让服务器把接收到的不正确提交信息 传输给所有客户端
+    /// </summary>
+    [ClientRpc]
+    private void DeliveryIncorrectRecipeClientRpc()
+    {
+        OnRecipeFailed?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>

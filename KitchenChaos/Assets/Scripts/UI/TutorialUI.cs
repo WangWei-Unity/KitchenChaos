@@ -28,7 +28,8 @@ public class TutorialUI : MonoBehaviour
 
         UpdateBtnInfo();
 
-        Show();
+        //Show();
+        Hide();
     }
 
     /// <summary>

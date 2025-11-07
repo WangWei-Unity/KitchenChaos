@@ -10,5 +10,7 @@ public class ResetStaticDataManager
         BaseCounter.ResetStaticData();
         CuttingCounter.ResetStaticData();
         TrashCounter.ResetStaticData();
+        //重置本地玩家数据
+        Player.ResetStaticData();
     }
 }

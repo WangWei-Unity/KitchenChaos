@@ -1,21 +1,40 @@
 using System;
 using Unity.Mathematics;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SocialPlatforms;
 
-public class Player : MonoBehaviour, IKitchenObjectParent
+public class Player : NetworkBehaviour, IKitchenObjectParent
 {
+    //当任意新玩家创建时 调用的事件
+    public static event EventHandler OnAnyPlayerSpawned;
+    //当任意玩家拾取物体时 调用的事件
+    public static event EventHandler OnAnyPickedSomething;
+    
+    public static void ResetStaticData()
+    {
+        OnAnyPlayerSpawned = null;
+    }
+
     private static Player instance;
 
-    public static Player Instance => instance;
+    public static Player LocalInstance => instance;
 
     void Awake()
     {
-        if (instance != null)
+        //instance = this;
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        //只有是自己本身的网络生成的对象 才会实例化本地的Player数据
+        if (IsOwner)
         {
-            Debug.LogError("This is more than one Player instance");
+            instance = this;
         }
-        instance = this;
+
+        OnAnyPlayerSpawned?.Invoke(this, EventArgs.Empty);
     }
 
     //拾取物体时的音效事件
@@ -94,6 +113,8 @@ public class Player : MonoBehaviour, IKitchenObjectParent
 
     void Update()
     {
+        if (!IsOwner) return;
+
         GameInput.Instance.GetMovementVectorNormalized();
 
         //不在游戏时间不可以交互
@@ -103,6 +124,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent
             return;
         }
 
+        //HandleMovementServerAuth();
         HandleMovement();
         HandleInteractions();
     }
@@ -148,6 +170,72 @@ public class Player : MonoBehaviour, IKitchenObjectParent
         else
         {
             SetSelectedCounter(null);
+        }
+    }
+
+    /// <summary>
+    /// 帧同步
+    /// </summary>
+    private void HandleMovementServerAuth()
+    {
+        Vector2 inputVector = GameInput.Instance.GetMovementVectorNormalized();
+        HandleMovementServerRpc(inputVector);
+    }
+
+    /// <summary>
+    /// 通过ServerRpc实现客户端移动的同步
+    /// </summary>
+    /// <param name="inputVector"></param>
+    [ServerRpc]
+    private void HandleMovementServerRpc(Vector2 inputVector)
+    {
+        Vector3 moveDir = new Vector3(inputVector.x, 0, inputVector.y);
+
+        float playerRadius = .7f;
+        float playerHeight = 2f;
+        float moveDistance = moveSpeed * Time.deltaTime;
+        bool canMove = !Physics.CapsuleCast(this.transform.position, this.transform.position + Vector3.up * playerHeight, playerRadius, moveDir, moveDistance);
+
+        if (!canMove)
+        {
+            //尝试只在x方向上移动
+            //这是为了防止向斜方向进行移动时，由于检测到物体而导致无法正常移动
+            //正常情况下，应该沿着平行于被检测到物体的方向进行移动
+            Vector3 moveDirX = new Vector3(moveDir.x, 0, 0).normalized;
+            bool canMoveX = (moveDir.x < -.5f || moveDir.x > .5f) && !Physics.CapsuleCast(this.transform.position, this.transform.position + Vector3.up * playerHeight, playerRadius, moveDirX, moveDistance);
+            //尝试只在z方向上移动
+            Vector3 moveDirZ = new Vector3(0, 0, moveDir.z).normalized;
+            bool canMoveZ = (moveDir.z < -.5f || moveDir.z > .5f) && !Physics.CapsuleCast(this.transform.position, this.transform.position + Vector3.up * playerHeight, playerRadius, moveDirZ, moveDistance);
+
+            if (canMoveX)
+            {
+                //可以在x方向上移动
+                canMove = true;
+                moveDir = moveDirX;
+            }
+            if (canMoveZ)
+            {
+                //可以在z方向上移动
+                canMove = true;
+                moveDir = moveDirZ;
+            }
+        }
+
+        if (canMove)
+        {
+            //移动
+            this.transform.Translate(moveSpeed * moveDir * Time.deltaTime);
+        }
+
+        //只有在移动状态才会 旋转
+        if (moveDir != Vector3.zero)
+        {
+            playerVisual.transform.rotation = Quaternion.Lerp(playerVisual.transform.rotation, Quaternion.LookRotation(moveDir), roundSpeed * Time.deltaTime);
+            isWalking = true;
+        }
+        else
+        {
+            isWalking = false;
         }
     }
 
@@ -237,6 +325,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent
         if (kitchenObject != null)
         {
             OnPickupSomething?.Invoke(this, EventArgs.Empty);
+            OnAnyPickedSomething?.Invoke(this, EventArgs.Empty);
         }
     }
 

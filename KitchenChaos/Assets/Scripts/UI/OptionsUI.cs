@@ -208,7 +208,7 @@ public class OptionsUI : MonoBehaviour
         UpdateBtnInfo();
 
         //让玩家产生改键效果
-        Player.Instance.ChangeInput();
+        Player.LocalInstance.ChangeInput();
 
         OnBindingRebind?.Invoke(this, EventArgs.Empty);
     }
