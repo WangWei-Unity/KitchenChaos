@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Unity.Mathematics;
 using Unity.Netcode;
 using UnityEngine;
@@ -26,17 +27,6 @@ public class Player : NetworkBehaviour, IKitchenObjectParent
         //instance = this;
     }
 
-    public override void OnNetworkSpawn()
-    {
-        //只有是自己本身的网络生成的对象 才会实例化本地的Player数据
-        if (IsOwner)
-        {
-            instance = this;
-        }
-
-        OnAnyPlayerSpawned?.Invoke(this, EventArgs.Empty);
-    }
-
     //拾取物体时的音效事件
     public event EventHandler OnPickupSomething;
 
@@ -54,12 +44,14 @@ public class Player : NetworkBehaviour, IKitchenObjectParent
     [SerializeField] private float moveSpeed = 7;
     [SerializeField] private float roundSpeed = 7;
     [SerializeField] private LayerMask counterLayerMask;
+    [SerializeField] private LayerMask collisionsLayerMask;
 
     //玩家子物体对应的模型位置
     //用于处理旋转逻辑
     [SerializeField] private Transform playerVisual;
     //拾取物体放置的位置
     [SerializeField] private Transform kitchenObjectPoint;
+    [SerializeField] private List<Vector3> spawnPositionList;
 
     private bool isWalking = false;
     private Vector3 lastInteractDir;
@@ -77,6 +69,19 @@ public class Player : NetworkBehaviour, IKitchenObjectParent
 
         GameInput.Instance.OnInteractAction += GameInput_OnInteractAction;
         GameInput.Instance.OnInteractAlternateAction += GameInput_OnInteractAlternateAction;
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        //只有是自己本身的网络生成的对象 才会实例化本地的Player数据
+        if (IsOwner)
+        {
+            instance = this;
+        }
+
+        this.transform.position = spawnPositionList[(int)OwnerClientId];
+
+        OnAnyPlayerSpawned?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -249,9 +254,8 @@ public class Player : NetworkBehaviour, IKitchenObjectParent
         Vector3 moveDir = new Vector3(inputVector.x, 0, inputVector.y);
 
         float playerRadius = .7f;
-        float playerHeight = 2f;
         float moveDistance = moveSpeed * Time.deltaTime;
-        bool canMove = !Physics.CapsuleCast(this.transform.position, this.transform.position + Vector3.up * playerHeight, playerRadius, moveDir, moveDistance);
+        bool canMove = !Physics.BoxCast(this.transform.position, Vector3.one * playerRadius, moveDir, Quaternion.identity, moveDistance, collisionsLayerMask);
 
         if (!canMove)
         {
@@ -259,10 +263,10 @@ public class Player : NetworkBehaviour, IKitchenObjectParent
             //这是为了防止向斜方向进行移动时，由于检测到物体而导致无法正常移动
             //正常情况下，应该沿着平行于被检测到物体的方向进行移动
             Vector3 moveDirX = new Vector3(moveDir.x, 0, 0).normalized;
-            bool canMoveX = (moveDir.x < -.5f || moveDir.x > .5f) && !Physics.CapsuleCast(this.transform.position, this.transform.position + Vector3.up * playerHeight, playerRadius, moveDirX, moveDistance);
+            bool canMoveX = (moveDir.x < -.5f || moveDir.x > .5f) && !Physics.BoxCast(this.transform.position, Vector3.one * playerRadius, moveDirX, Quaternion.identity, moveDistance, collisionsLayerMask);
             //尝试只在z方向上移动
             Vector3 moveDirZ = new Vector3(0, 0, moveDir.z).normalized;
-            bool canMoveZ = (moveDir.z < -.5f || moveDir.z > .5f) && !Physics.CapsuleCast(this.transform.position, this.transform.position + Vector3.up * playerHeight, playerRadius, moveDirZ, moveDistance);
+            bool canMoveZ = (moveDir.z < -.5f || moveDir.z > .5f) && !Physics.BoxCast(this.transform.position, Vector3.one * playerRadius, moveDirZ, Quaternion.identity, moveDistance, collisionsLayerMask);
 
             if (canMoveX)
             {
@@ -364,5 +368,10 @@ public class Player : NetworkBehaviour, IKitchenObjectParent
         //改键就是改变 我们PlayerInput上关联的输入配置信息
         playerInput.actions = DataManager.Instance.GetActionAsset();
         playerInput.actions.Enable();
+    }
+
+    public NetworkObject GetNetworkObject()
+    {
+        return NetworkObject;
     }
 }

@@ -24,12 +24,11 @@ public class TutorialUI : MonoBehaviour
         gameInputInfo = DataManager.Instance.GetGameInputInfo();
 
         OptionsUI.Instance.OnBindingRebind += OptionsUI_OnBindingRebind;
-        KitchenGameManager.Instance.OnStateChanged += KitchenGameManager_OnStateChanged;
+        KitchenGameManager.Instance.OnLocalPlayerReadyChanged += KitchenGameManager_OnLocalPlayerReadyChanged;
 
         UpdateBtnInfo();
 
-        //Show();
-        Hide();
+        Show();
     }
 
     /// <summary>
@@ -37,9 +36,9 @@ public class TutorialUI : MonoBehaviour
     /// </summary>
     /// <param name="sender"></param>
     /// <param name="e"></param>
-    private void KitchenGameManager_OnStateChanged(object sender, EventArgs e)
+    private void KitchenGameManager_OnLocalPlayerReadyChanged(object sender, EventArgs e)
     {
-        if (KitchenGameManager.Instance.IsCountdownToStartActive())
+        if (KitchenGameManager.Instance.IsLocalPlayerReady())
         {
             Hide();
         }

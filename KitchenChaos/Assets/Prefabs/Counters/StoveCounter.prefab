@@ -392,6 +392,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -2663513178115107297, guid: afc0765d42c67ed409e354b330ae019d, type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 4186093465
+      objectReference: {fileID: 0}
     - target: {fileID: 1669181771623554458, guid: afc0765d42c67ed409e354b330ae019d, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.041
@@ -493,6 +497,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 927dec12c03d708459821c22aed0973f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   counterTopPoint: {fileID: 1487088225653027878}
   fryingRecipeSOArray:
   - {fileID: 11400000, guid: 3c138d1d8e18dd74c849b28b393db385, type: 2}

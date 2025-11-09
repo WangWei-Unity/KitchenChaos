@@ -1,4 +1,5 @@
 using System;
+using Unity.Netcode;
 using UnityEngine;
 
 public class ContainerCounter : BaseCounter
@@ -18,7 +19,25 @@ public class ContainerCounter : BaseCounter
         {
             KitchenObject.SpawnKitchenObject(kitchenObjectSO, player);
 
-            OnPlayerGrabbedObject?.Invoke(this, EventArgs.Empty);
+            InteractLogicSeverRpc();
         }
+    }
+
+    /// <summary>
+    /// 通过ServerRpc得到客户端播放了动画的信息
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void InteractLogicSeverRpc()
+    {
+        InteractLogicClientRpc();
+    }
+    
+    /// <summary>
+    /// 通过ClientRpc将播放动画的信息传递给所有客户端
+    /// </summary>
+    [Rpc(SendTo.ClientsAndHost)]
+    private void InteractLogicClientRpc()
+    {
+        OnPlayerGrabbedObject?.Invoke(this, EventArgs.Empty);
     }
 }

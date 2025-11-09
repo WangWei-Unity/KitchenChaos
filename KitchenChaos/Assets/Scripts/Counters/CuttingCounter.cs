@@ -1,4 +1,5 @@
 using System;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -36,16 +37,10 @@ public class CuttingCounter : BaseCounter, IHasProgress
                 //只有玩家当前携带的物体可以被切片 才可以放置到柜子上
                 if (HasRecipeWithInput(player.GetKitchenObject().GetKitchenObjectSO()))
                 {
-                    player.GetKitchenObject().SetKitchenObjectParent(this);
-                    cuttingProgess = 0;
+                    KitchenObject kitchenObject = player.GetKitchenObject();
+                    kitchenObject.SetKitchenObjectParent(this);
 
-                    CuttingRecipeSO cuttingRecipeSO = GetCuttingRecipeSOWithInput(GetKitchenObject().GetKitchenObjectSO());
-
-                    //初始化进度条
-                    OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs
-                    {
-                        progressNormalized = (float)cuttingProgess / cuttingRecipeSO.cuttingProgessMax
-                    });
+                    InteractLogicPlaceObjectOnCounterServerRpc();
                 }
             }
             else
@@ -58,12 +53,12 @@ public class CuttingCounter : BaseCounter, IHasProgress
             if (player.HasKitchenObject())
             {
                 //如果玩家手上拿着盘子 就把柜子上的物体移动到玩家的盘子上
-                if(player.GetKitchenObject().TryGetPlate(out PlateKitchenObject plateKitchenObject))
+                if (player.GetKitchenObject().TryGetPlate(out PlateKitchenObject plateKitchenObject))
                 {
                     //成功添加才销毁桌子上的物体
                     if (plateKitchenObject.TryAddIngredient(GetKitchenObject().GetKitchenObjectSO()))
                     {
-                        GetKitchenObject().DestroySelf();
+                        KitchenGameMultiplayer.Instance.DestroyKitchenObject(GetKitchenObject());
                     }
                 }
             }
@@ -80,6 +75,30 @@ public class CuttingCounter : BaseCounter, IHasProgress
     }
 
     /// <summary>
+    /// 通过ServerRpc传给服务器初始化进度条的信息
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void InteractLogicPlaceObjectOnCounterServerRpc()
+    {
+        InteractLogicPlaceObjectOnCounterClientRpc();
+    }
+    
+    /// <summary>
+    /// 通过ClientRpc让每个客户端都可以初始化进度条
+    /// </summary>
+    [Rpc(SendTo.ClientsAndHost)]
+    private void InteractLogicPlaceObjectOnCounterClientRpc()
+    {
+        cuttingProgess = 0;
+
+        //初始化进度条
+        OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs
+        {
+            progressNormalized = 0
+        });
+    }
+
+    /// <summary>
     /// 切割物体的交互
     /// </summary>
     /// <param name="player"></param>
@@ -88,27 +107,56 @@ public class CuttingCounter : BaseCounter, IHasProgress
         //如果有物体 并且 当前物体可以被切片 才进行切片操作
         if (HasKitchenObject() && HasRecipeWithInput(GetKitchenObject().GetKitchenObjectSO()))
         {
-            cuttingProgess++;
+            CutObjectServerRpc();
 
-            OnCut?.Invoke(this, EventArgs.Empty);
-            OnAnyCut?.Invoke(this, EventArgs.Empty);
+            TestCuttingProgressDoneServerRpc();
+        }
+    }
 
-            CuttingRecipeSO cuttingRecipeSO = GetCuttingRecipeSOWithInput(GetKitchenObject().GetKitchenObjectSO());
+    /// <summary>
+    /// 通过ServerRpc传给服务器切割物体的消息
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void CutObjectServerRpc()
+    {
+        CutObjectClientRpc();
+    }
 
-            OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs
-            {
-                progressNormalized = (float)cuttingProgess / cuttingRecipeSO.cuttingProgessMax
-            });
+    /// <summary>
+    /// 通过ClientRpc传给所有客户端 让客户端进行切割操作
+    /// </summary>
+    [Rpc(SendTo.ClientsAndHost)]
+    private void CutObjectClientRpc()
+    {
+        cuttingProgess++;
 
-            //只有切割达到要求次数 才会切片成功
-            if (cuttingProgess >= cuttingRecipeSO.cuttingProgessMax)
-            {
-                KitchenObjectSO outputKitchenObjectSO = GetOutputForInput(GetKitchenObject().GetKitchenObjectSO());
+        OnCut?.Invoke(this, EventArgs.Empty);
+        OnAnyCut?.Invoke(this, EventArgs.Empty);
 
-                GetKitchenObject().DestroySelf();
+        CuttingRecipeSO cuttingRecipeSO = GetCuttingRecipeSOWithInput(GetKitchenObject().GetKitchenObjectSO());
 
-                KitchenObject.SpawnKitchenObject(outputKitchenObjectSO, this);
-            }
+        OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs
+        {
+            progressNormalized = (float)cuttingProgess / cuttingRecipeSO.cuttingProgessMax
+        });
+    }
+
+    /// <summary>
+    /// 通过ServerRpc确保只有服务端能够删除和生成物体 然后分发给所有客户端 避免客户端同时多次删除同一个物体导致错误
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void TestCuttingProgressDoneServerRpc()
+    {
+        CuttingRecipeSO cuttingRecipeSO = GetCuttingRecipeSOWithInput(GetKitchenObject().GetKitchenObjectSO());
+
+        //只有切割达到要求次数 才会切片成功
+        if (cuttingProgess >= cuttingRecipeSO.cuttingProgessMax)
+        {
+            KitchenObjectSO outputKitchenObjectSO = GetOutputForInput(GetKitchenObject().GetKitchenObjectSO());
+
+            KitchenObject.DestroyKitchenObject(GetKitchenObject());
+
+            KitchenObject.SpawnKitchenObject(outputKitchenObjectSO, this);
         }
     }
 

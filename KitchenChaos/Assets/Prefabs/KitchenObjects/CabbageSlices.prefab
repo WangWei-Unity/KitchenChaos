@@ -10,6 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 3177820481877854768}
   - component: {fileID: -4696275630496203550}
+  - component: {fileID: -3617162305681988415}
+  - component: {fileID: -2932778224938422261}
   m_Layer: 0
   m_Name: CabbageSlices
   m_TagString: Untagged
@@ -45,7 +47,45 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66f1ed07691d5294a9b80fe52b6fd6e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   kitchenObjectSO: {fileID: 11400000, guid: af23a41c21fd2024281c278b7d2b49b1, type: 2}
+--- !u!114 &-3617162305681988415
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5706408209477506665}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 767131247
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &-2932778224938422261
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5706408209477506665}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58cf4f4208e806e48874611951e7e8f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &3371642555051229123
 PrefabInstance:
   m_ObjectHideFlags: 0

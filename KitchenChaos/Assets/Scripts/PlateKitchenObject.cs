@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 public class PlateKitchenObject : KitchenObject
@@ -17,8 +18,12 @@ public class PlateKitchenObject : KitchenObject
     //盘子上当前放的所有物体
     private List<KitchenObjectSO> kitchenObjectSOList;
 
-    void Awake()
+    /// <summary>
+    /// 如果不重写Awake的话 无法实例化followTransform数据 导致无法正常使用Plate
+    /// </summary>
+    protected override void Awake()
     {
+        base.Awake();
         kitchenObjectSOList = new List<KitchenObjectSO>();
     }
 
@@ -42,14 +47,33 @@ public class PlateKitchenObject : KitchenObject
         //如果没有 才可以添加
         else
         {
-            kitchenObjectSOList.Add(kitchenObjectSO);
-            OnIngredientAdded?.Invoke(this, new OnIngredientAddedEventArgs
-            {
-                kitchenObjectSO = kitchenObjectSO
-            });
+            AddIngredientServerRpc(KitchenGameMultiplayer.Instance.GetKitchenObjectSOIndex(kitchenObjectSO));
 
             return true;
         }
+    }
+
+    /// <summary>
+    /// 通过ServerRpc传给服务器添加配料的消息
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void AddIngredientServerRpc(int kitchenObjectSOIndex)
+    {
+        AddIngredientClientRpc(kitchenObjectSOIndex);
+    }
+
+    /// <summary>
+    /// 通过ClientRpc传给所有客户端添加配料
+    /// </summary>
+    [Rpc(SendTo.ClientsAndHost)]
+    private void AddIngredientClientRpc(int kitchenObjectSOIndex)
+    {
+        KitchenObjectSO kitchenObjectSO = KitchenGameMultiplayer.Instance.GetKitchenObjectFromIndex(kitchenObjectSOIndex);
+        kitchenObjectSOList.Add(kitchenObjectSO);
+        OnIngredientAdded?.Invoke(this, new OnIngredientAddedEventArgs
+        {
+            kitchenObjectSO = kitchenObjectSO
+        });
     }
 
     /// <summary>

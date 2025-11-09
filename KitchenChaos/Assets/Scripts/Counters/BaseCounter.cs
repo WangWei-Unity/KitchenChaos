@@ -1,7 +1,8 @@
 using System;
+using Unity.Netcode;
 using UnityEngine;
 
-public class BaseCounter : MonoBehaviour, IKitchenObjectParent
+public class BaseCounter : NetworkBehaviour, IKitchenObjectParent
 {
     //当物体放置时播放音效的事件
     public static event EventHandler OnAnyObjectPlacedHere;
@@ -82,5 +83,10 @@ public class BaseCounter : MonoBehaviour, IKitchenObjectParent
     public bool HasKitchenObject()
     {
         return kitchenObject != null;
+    }
+
+    public NetworkObject GetNetworkObject()
+    {
+        return NetworkObject;
     }
 }

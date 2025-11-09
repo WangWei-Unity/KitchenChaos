@@ -1,4 +1,5 @@
 using System;
+using Unity.Netcode;
 using UnityEngine;
 
 public class PlatesCounter : BaseCounter
@@ -18,6 +19,8 @@ public class PlatesCounter : BaseCounter
 
     void Update()
     {
+        if (!IsServer) return;
+
         if (platesSpawnedAmount < platesSpawnedAmountMax)
         {
             spawnPlateTimer += Time.deltaTime;
@@ -26,11 +29,26 @@ public class PlatesCounter : BaseCounter
             {
                 //重置计时器
                 spawnPlateTimer = 0f;
-                platesSpawnedAmount++;
-
-                OnPlateSpawned?.Invoke(this, EventArgs.Empty);
+                SpawnPlateServerRpc();
             }
         }
+    }
+
+    /// <summary>
+    /// 通过ServerRpc发送服务器
+    /// </summary>
+    [Rpc(SendTo.Server)]
+    private void SpawnPlateServerRpc()
+    {
+        SpawnPlateClientRpc();
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void SpawnPlateClientRpc()
+    {
+        platesSpawnedAmount++;
+
+        OnPlateSpawned?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -42,15 +60,33 @@ public class PlatesCounter : BaseCounter
         if (!player.HasKitchenObject())
         {
             //如果盘子数量大于0 才可以拿盘子
-            if(platesSpawnedAmount > 0)
+            if (platesSpawnedAmount > 0)
             {
                 platesSpawnedAmount--;
 
                 //在玩家手上产生一个盘子
                 KitchenObject.SpawnKitchenObject(plateKitchenObjectSO, player);
 
-                OnPlateRemoved?.Invoke(this, EventArgs.Empty);
+                InteractLogicClientRpc();
             }
         }
+    }
+    
+    /// <summary>
+    /// 通过ServerRpc得到客户端播放了动画的信息
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void InteractLogicSeverRpc()
+    {
+        InteractLogicClientRpc();
+    }
+    
+    /// <summary>
+    /// 通过ClientRpc将播放动画的信息传递给所有客户端
+    /// </summary>
+    [Rpc(SendTo.ClientsAndHost)]
+    private void InteractLogicClientRpc()
+    {
+        OnPlateRemoved?.Invoke(this, EventArgs.Empty);
     }
 }

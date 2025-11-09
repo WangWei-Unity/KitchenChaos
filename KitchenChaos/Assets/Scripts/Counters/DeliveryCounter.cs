@@ -23,7 +23,7 @@ public class DeliveryCounter : BaseCounter
                 //提交成功才销毁物体
                 if (DeliveryManager.Instance.DeliveryRecipe(plateKitchenObject))
                 {
-                    player.GetKitchenObject().DestroySelf();
+                    KitchenObject.DestroyKitchenObject(player.GetKitchenObject());
                 }
             }
         }

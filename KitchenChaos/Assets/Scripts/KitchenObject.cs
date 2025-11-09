@@ -1,11 +1,18 @@
+using Unity.Netcode;
 using UnityEngine;
 
-public class KitchenObject : MonoBehaviour
+public class KitchenObject : NetworkBehaviour
 {
     [SerializeField] private KitchenObjectSO kitchenObjectSO;
 
     //private ClearCounter clearCounter;
     private IKitchenObjectParent kitchenObjectParent;
+    private FollowTransform followTransform;
+
+    protected virtual void Awake()
+    {
+        followTransform = this.GetComponent<FollowTransform>();
+    }
 
 
     /// <summary>
@@ -22,6 +29,29 @@ public class KitchenObject : MonoBehaviour
     /// <param name="kitchenObjectParent"></param>
     public void SetKitchenObjectParent(IKitchenObjectParent kitchenObjectParent)
     {
+        SetKitchenObjectParentServerRpc(kitchenObjectParent.GetNetworkObject());
+    }
+
+    /// <summary>
+    /// 通过serverRpc让客户端得到对象状态 发送给服务器
+    /// </summary>
+    /// <param name="kitchenObjectParentNetworkObjectReference"></param>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void SetKitchenObjectParentServerRpc(NetworkObjectReference kitchenObjectParentNetworkObjectReference)
+    {
+        SetKitchenObjectParentClientRpc(kitchenObjectParentNetworkObjectReference);
+    }
+
+    /// <summary>
+    /// 通过ClientRpc把对象状态再发给所有客户端来同步
+    /// </summary>
+    /// <param name="kitchenObjectParentNetworkObjectReference"></param>
+    [Rpc(SendTo.ClientsAndHost)]
+    private void SetKitchenObjectParentClientRpc(NetworkObjectReference kitchenObjectParentNetworkObjectReference)
+    {
+        kitchenObjectParentNetworkObjectReference.TryGet(out NetworkObject kitchenObjectParentNetworkObject);
+        IKitchenObjectParent kitchenObjectParent = kitchenObjectParentNetworkObject.GetComponent<IKitchenObjectParent>();
+
         //离开当前父对象 就要把当前父对象上的物体（数据）清空
         if (this.kitchenObjectParent != null)
         {
@@ -38,8 +68,7 @@ public class KitchenObject : MonoBehaviour
         //更新当前放置父对象上的 物体数据
         kitchenObjectParent.SetKitchenObject(this);
 
-        this.transform.parent = kitchenObjectParent.GetKitchenObjectFollowTransform();
-        this.transform.localPosition = Vector3.zero;
+        followTransform.SetTargetTransform(kitchenObjectParent.GetKitchenObjectFollowTransform());
     }
 
     public IKitchenObjectParent GetClearCounter()
@@ -52,8 +81,22 @@ public class KitchenObject : MonoBehaviour
     /// </summary>
     public void DestroySelf()
     {
-        kitchenObjectParent.ClearKitchenObject();
+        NetworkObject netObj = GetComponent<NetworkObject>();
+
+        if (netObj.IsSpawned)
+        {
+            netObj.Despawn(); // 从网络中移除对象
+        }
+        
         Destroy(gameObject);
+    }
+
+    /// <summary>
+    /// 删除物体父对象上的物体数据
+    /// </summary>
+    public void ClearKitchenObjectOnParent()
+    {
+        kitchenObjectParent.ClearKitchenObject();
     }
 
     /// <summary>
@@ -81,12 +124,17 @@ public class KitchenObject : MonoBehaviour
     /// 产生一个物体的静态方法
     /// </summary>
     /// <returns></returns>
-    public static KitchenObject SpawnKitchenObject(KitchenObjectSO kitchenObjectSO, IKitchenObjectParent kitchenObjectParent)
+    public static void SpawnKitchenObject(KitchenObjectSO kitchenObjectSO, IKitchenObjectParent kitchenObjectParent)
     {
-        Transform kitchenObjectTransform = Instantiate(kitchenObjectSO.prefab);
-        KitchenObject kitchenObject = kitchenObjectTransform.GetComponent<KitchenObject>();
-        kitchenObject.SetKitchenObjectParent(kitchenObjectParent);
+        KitchenGameMultiplayer.Instance.SpawnKitchenObject(kitchenObjectSO, kitchenObjectParent);
+    }
 
-        return kitchenObject;
+    /// <summary>
+    /// 删除某个物体
+    /// </summary>
+    /// <param name="kitchenObject"></param>
+    public static void DestroyKitchenObject(KitchenObject kitchenObject)
+    {
+        KitchenGameMultiplayer.Instance.DestroyKitchenObject(kitchenObject);
     }
 }

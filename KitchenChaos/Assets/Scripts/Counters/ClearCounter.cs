@@ -34,7 +34,7 @@ public class ClearCounter : BaseCounter
                     //成功添加才销毁桌子上的物体
                     if (plateKitchenObject.TryAddIngredient(GetKitchenObject().GetKitchenObjectSO()))
                     {
-                        GetKitchenObject().DestroySelf();
+                        KitchenGameMultiplayer.Instance.DestroyKitchenObject(GetKitchenObject());
                     }
                 }
                 else
@@ -44,7 +44,7 @@ public class ClearCounter : BaseCounter
                     {
                         if (plateKitchenObject.TryAddIngredient(player.GetKitchenObject().GetKitchenObjectSO()))
                         {
-                            player.GetKitchenObject().DestroySelf();
+                            KitchenGameMultiplayer.Instance.DestroyKitchenObject(player.GetKitchenObject());
                         }
                     }
                 }

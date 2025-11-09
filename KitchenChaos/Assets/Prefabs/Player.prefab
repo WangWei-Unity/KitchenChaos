@@ -46,7 +46,8 @@ GameObject:
   - component: {fileID: 6813247255582519733}
   - component: {fileID: 561915106077902966}
   - component: {fileID: 4668385573050222446}
-  m_Layer: 0
+  - component: {fileID: 7316429815439610982}
+  m_Layer: 7
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -112,8 +113,16 @@ MonoBehaviour:
   counterLayerMask:
     serializedVersion: 2
     m_Bits: 64
+  collisionsLayerMask:
+    serializedVersion: 2
+    m_Bits: 192
   playerVisual: {fileID: 3883070636151582868}
   kitchenObjectPoint: {fileID: 6585438388481030986}
+  spawnPositionList:
+  - {x: -2, y: 0, z: 0}
+  - {x: 2, y: 0, z: 0}
+  - {x: -2, y: 0, z: -2}
+  - {x: 2, y: 0, z: -2}
 --- !u!114 &8935996768414492961
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -229,6 +238,27 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 0
+--- !u!65 &7316429815439610982
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8629819285741744088}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.7, y: 1, z: 0.7}
+  m_Center: {x: 0, y: 0.5, z: 0}
 --- !u!1001 &1754755720143281328
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -300,9 +330,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3294758251327466535, guid: 1c5dda3c7cd3cf742afcade5419faeab, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4761743781341772814}
-    - targetCorrespondingSourceObject: {fileID: 3294758251441920689, guid: 1c5dda3c7cd3cf742afcade5419faeab, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 3690298211787970700}
   m_SourcePrefab: {fileID: 100100000, guid: 1c5dda3c7cd3cf742afcade5419faeab, type: 3}
 --- !u!4 &3883070636151582868 stripped
 Transform:
@@ -389,32 +416,6 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   TransitionStateInfoList: []
   m_Animator: {fileID: 5460222743338776036}
---- !u!1 &3883070636314199553 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 3294758251441920689, guid: 1c5dda3c7cd3cf742afcade5419faeab, type: 3}
-  m_PrefabInstance: {fileID: 1754755720143281328}
-  m_PrefabAsset: {fileID: 0}
---- !u!135 &3690298211787970700
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3883070636314199553}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.5
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!95 &5460222743338776036 stripped
 Animator:
   m_CorrespondingSourceObject: {fileID: 6024899996280613204, guid: 1c5dda3c7cd3cf742afcade5419faeab, type: 3}

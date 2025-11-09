@@ -1,4 +1,5 @@
 using System;
+using Unity.Netcode;
 using UnityEngine;
 
 public class TrashCounter : BaseCounter
@@ -18,9 +19,27 @@ public class TrashCounter : BaseCounter
     {
         if (player.HasKitchenObject())
         {
-            player.GetKitchenObject().DestroySelf();
+            KitchenObject.DestroyKitchenObject(player.GetKitchenObject());
 
-            OnAnyObjectTrashed?.Invoke(this, EventArgs.Empty);
+            InteractLogicSeverRpc();
         }
+    }
+
+    /// <summary>
+    /// 通过ServerRpc得到客户端播放了动画的信息
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void InteractLogicSeverRpc()
+    {
+        InteractLogicClientRpc();
+    }
+    
+    /// <summary>
+    /// 通过ClientRpc将播放动画的信息传递给所有客户端
+    /// </summary>
+    [Rpc(SendTo.ClientsAndHost)]
+    private void InteractLogicClientRpc()
+    {
+        OnAnyObjectTrashed?.Invoke(this, EventArgs.Empty);
     }
 }
