@@ -118,7 +118,7 @@ public class OptionsUI : MonoBehaviour
 
     void Start()
     {
-        KitchenGameManager.Instance.OnGameUnpaused += KitchenGameManager_OnGameUnpaused;
+        KitchenGameManager.Instance.OnLoaclGameUnpaused += KitchenGameManager_OnGameUnpaused;
 
         UpdateVisual();
         UpdateBtnInfo();

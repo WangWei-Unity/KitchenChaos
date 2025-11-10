@@ -14,7 +14,7 @@ public class MainMenuUI : MonoBehaviour
         //进入游戏
         playButton.onClick.AddListener(() =>
         {
-            Loader.Load(Loader.Scene.GameScene);
+            Loader.Load(Loader.Scene.LobbyScene);
         });
 
         //退出游戏

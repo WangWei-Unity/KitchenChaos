@@ -44,15 +44,31 @@ public class SelectedCounterVisual : MonoBehaviour
     {
         foreach(GameObject visualGameObject in visualGameObjectArray)
         {
-            visualGameObject.SetActive(true);
+            if (visualGameObject != null)
+            {
+                visualGameObject.SetActive(true);
+            }
         }
     }
-    
+
     private void Hide()
     {
-        foreach(GameObject visualGameObject in visualGameObjectArray)
+        foreach (GameObject visualGameObject in visualGameObjectArray)
         {
-            visualGameObject.SetActive(false);
+            if (visualGameObject != null)
+            {
+                visualGameObject.SetActive(false);
+            }
         }
+    }
+
+    void OnDestroy()
+    {
+        if (Player.LocalInstance != null)
+        {
+            Player.LocalInstance.OnSelectedCounterChange -= Player_OnSelectedCounterChanged;
+        }
+
+        Player.OnAnyPlayerSpawned -= Player_OnAnyPlayerSpawned;
     }
 }

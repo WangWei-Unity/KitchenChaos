@@ -1,17 +1,93 @@
+using System;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class KitchenGameMultiplayer : NetworkBehaviour
 {
+    private const int MAX_PLAYER_AMOUNT = 4;
+
     private static KitchenGameMultiplayer instance;
 
     public static KitchenGameMultiplayer Instance => instance;
 
     [SerializeField] private KitchenObjectListSO kitchenObjectListSO;
 
+    //玩家试图连接游戏时执行的事件
+    public event EventHandler OnTryingToJoinGame;
+    //玩家试图连接游戏失败时执行的事件
+    public event EventHandler OnFailedToJoinGame;
+
+
     void Awake()
     {
         instance = this;
+
+        DontDestroyOnLoad(gameObject);
+    }
+
+    /// <summary>
+    /// 开启主机
+    /// </summary>
+    public void StartHost()
+    {
+        //当新玩家中途加入游戏处理的事件
+        NetworkManager.Singleton.ConnectionApprovalCallback += NetworkManager_ConnectionApprovalCallback;
+        NetworkManager.Singleton.StartHost();
+    }
+
+    /// <summary>
+    /// 新玩家加入游戏处理的逻辑
+    /// </summary>
+    /// <param name="connectionApprovalRequest"></param>
+    /// <param name="connectionApprovalResponse"></param>
+    private void NetworkManager_ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest connectionApprovalRequest, NetworkManager.ConnectionApprovalResponse connectionApprovalResponse)
+    {
+        if (SceneManager.GetActiveScene().name != Loader.Scene.CharacterSelectScene.ToString())
+        {
+            connectionApprovalResponse.Approved = false;
+            connectionApprovalResponse.Reason = "Game has already started";
+            return;
+        }
+
+        if (NetworkManager.Singleton.ConnectedClientsIds.Count >= MAX_PLAYER_AMOUNT)
+        {
+            connectionApprovalResponse.Approved = false;
+            connectionApprovalResponse.Reason = "Game is full";
+            return;
+        }
+
+        connectionApprovalResponse.Approved = true;
+        // if (KitchenGameManager.Instance.IsWaitingToStartActive())
+        // {
+        //     //同意连接
+        //     connectionApprovalResponse.Approved = true;
+        //     //同意创建玩家 必须手动创建
+        //     connectionApprovalResponse.CreatePlayerObject = true;
+        // }
+        // else
+        // {
+        //     //不同意连接
+        //     connectionApprovalResponse.Approved = false;
+        // }
+    }
+
+    /// <summary>
+    /// 开启客户端
+    /// </summary>
+    public void StartClient()
+    {
+        OnTryingToJoinGame?.Invoke(this, EventArgs.Empty);
+
+        //无法正常连接执行的事件
+        NetworkManager.Singleton.OnClientDisconnectCallback += NetworkManager_OnClientDisconnectCallback;
+
+        NetworkManager.Singleton.StartClient();
+    }
+    
+    private void NetworkManager_OnClientDisconnectCallback(ulong clientId)
+    {
+        OnFailedToJoinGame?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>

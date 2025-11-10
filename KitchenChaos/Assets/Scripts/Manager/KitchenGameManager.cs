@@ -14,11 +14,15 @@ public class KitchenGameManager : NetworkBehaviour
     //状态切换时的事件
     public event EventHandler OnStateChanged;
     //暂停时处理的事件
-    public event EventHandler OnGamePaused;
+    public event EventHandler OnLocalGamePaused;
     //取消暂停时处理的事件
-    public event EventHandler OnGameUnpaused;
+    public event EventHandler OnLoaclGameUnpaused;
     //当本地玩家准备好后处理的事件
     public event EventHandler OnLocalPlayerReadyChanged;
+    //当有玩家暂停游戏时处理的事件
+    public event EventHandler OnMultiplayerGamePaused;
+    //当所有玩家结束暂停时处理的事件
+    public event EventHandler OnMultiplayerGameUnpaused;
 
     private enum State
     {
@@ -28,21 +32,27 @@ public class KitchenGameManager : NetworkBehaviour
         GameOver,
     }
 
+    [SerializeField] private Transform playerPrefab;
+
     private NetworkVariable<State> state = new NetworkVariable<State>(State.WaitingToStart);
     private bool isLocalPlayerReady;
     private NetworkVariable<float> countdownToStartTimer = new NetworkVariable<float>(3f);
 
-    private NetworkVariable<float> gamePlayingTimer = new NetworkVariable<float>(10f);
+    private NetworkVariable<float> gamePlayingTimer = new NetworkVariable<float>(90f);
     private float gamePlayingTimerMax = 90f;
 
-    private bool isGamePause = false;
+    private bool isLocalGamePause = false;
+    private NetworkVariable<bool> isGamePause = new NetworkVariable<bool>(false);
     private Dictionary<ulong, bool> playerReadyDictionary;
+    private Dictionary<ulong, bool> playerPauseDictionary;
+    private bool autoTestGamePauseState;
 
     void Awake()
     {
         instance = this;
 
         playerReadyDictionary = new Dictionary<ulong, bool>();
+        playerPauseDictionary = new Dictionary<ulong, bool>();
     }
 
     void Start()
@@ -54,11 +64,68 @@ public class KitchenGameManager : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         state.OnValueChanged += State_OnValueChanged;
+        isGamePause.OnValueChanged += IsGamePause_OnValueChanged;
+
+        if (IsServer)
+        {
+            NetworkManager.Singleton.OnClientDisconnectCallback += NetworkManager_OnClientDisconnectCallback;
+            //当所有客户端加载完毕后执行的事件
+            NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += SceneManagerr_OnLoadEventCompleted;
+        }
     }
 
+    /// <summary>
+    /// 当所有客户端加载完毕后执行的事件
+    /// </summary>
+    /// <param name="sceneName"></param>
+    /// <param name="loadSceneMode"></param>
+    /// <param name="clientsCompleted"></param>
+    private void SceneManagerr_OnLoadEventCompleted(string sceneName, UnityEngine.SceneManagement.LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong>clientsTimedOut)
+    {
+        foreach(ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
+        {
+            Transform playerTransform = Instantiate(playerPrefab);
+            playerTransform.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId, true);
+        }
+    }
+
+    /// <summary>
+    /// 当有玩家断开连接
+    /// </summary>
+    /// <param name="clientId"></param>
+    private void NetworkManager_OnClientDisconnectCallback(ulong clientId)
+    {
+        //确保断开连接后 再去查看是否还需要暂停游戏
+        autoTestGamePauseState = true;
+    }
+
+    /// <summary>
+    /// 游戏状态切换
+    /// </summary>
+    /// <param name="previousValue"></param>
+    /// <param name="nowValue"></param>
     private void State_OnValueChanged(State previousValue, State nowValue)
     {
         OnStateChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// 暂停状态的切换
+    /// </summary>
+    /// <param name="previousValue"></param>
+    /// <param name="nowValue"></param>
+    private void IsGamePause_OnValueChanged(bool previousValue, bool nowValue)
+    {
+        if (isGamePause.Value)
+        {
+            Time.timeScale = 0;
+            OnMultiplayerGamePaused?.Invoke(this, EventArgs.Empty);
+        }
+        else
+        {
+            Time.timeScale = 1f;
+            OnMultiplayerGameUnpaused?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     /// <summary>
@@ -145,6 +212,16 @@ public class KitchenGameManager : NetworkBehaviour
         }
     }
 
+    void LateUpdate()
+    {
+        if (autoTestGamePauseState)
+        {
+            autoTestGamePauseState = false;
+            //测试一下退出这个玩家后 是否还有其它玩家暂停 没有的话就可以继续游戏了
+            TestGamePauseState();
+        }
+    }
+
     /// <summary>
     /// 不在GamePlaying的时候 人物不可以移动交互
     /// </summary>
@@ -167,7 +244,7 @@ public class KitchenGameManager : NetworkBehaviour
     /// 判断当前是不是等待开始阶段
     /// </summary>
     /// <returns></returns>
-    public bool IsWaitingToStarttActive()
+    public bool IsWaitingToStartActive()
     {
         return state.Value == State.WaitingToStart;
     }
@@ -213,16 +290,59 @@ public class KitchenGameManager : NetworkBehaviour
     /// </summary>
     public void TogglePauseGame()
     {
-        isGamePause = !isGamePause;
-        if (isGamePause)
+        isLocalGamePause = !isLocalGamePause;
+        if (isLocalGamePause)
         {
-            Time.timeScale = 0;
-            OnGamePaused?.Invoke(this, EventArgs.Empty);
+            PauseGameServerRpc();
+            OnLocalGamePaused?.Invoke(this, EventArgs.Empty);
         }
         else
         {
-            Time.timeScale = 1f;
-            OnGameUnpaused?.Invoke(this, EventArgs.Empty);
+            UnpauseGameServerRpc();
+            OnLoaclGameUnpaused?.Invoke(this, EventArgs.Empty);
         }
+    }
+
+    /// <summary>
+    /// 通过ServerRpc传给服务器该客户端暂停的通知
+    /// </summary>
+    /// <param name="rpcParams"></param>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void PauseGameServerRpc(RpcParams rpcParams = default)
+    {
+        playerPauseDictionary[rpcParams.Receive.SenderClientId] = true;
+
+        TestGamePauseState();
+    }
+
+    /// <summary>
+    /// 通过ServerRpc传给服务器该客户端结束暂停的通知
+    /// </summary>
+    /// <param name="rpcParams"></param>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void UnpauseGameServerRpc(RpcParams rpcParams = default)
+    {
+        playerPauseDictionary[rpcParams.Receive.SenderClientId] = false;
+
+        TestGamePauseState();
+    }
+    
+    /// <summary>
+    /// 测试是否有玩家暂停 而让所有玩家一起等待
+    /// </summary>
+    private void TestGamePauseState()
+    {
+        foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
+        {
+            if (playerPauseDictionary.ContainsKey(clientId) && playerPauseDictionary[clientId])
+            {
+                //暂停游戏
+                isGamePause.Value = true;
+                return;
+            }
+        }
+        
+        //所有玩家继续游戏
+        isGamePause.Value = false;
     }
 }

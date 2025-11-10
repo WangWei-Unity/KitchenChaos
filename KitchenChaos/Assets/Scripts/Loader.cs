@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -8,6 +9,8 @@ public static class Loader
         MainMenuScene,
         GameScene,
         LoadingScene,
+        LobbyScene,
+        CharacterSelectScene
     }
 
     private static Scene targetScene;
@@ -21,6 +24,15 @@ public static class Loader
         Loader.targetScene = targetScene;
 
         SceneManager.LoadScene(Scene.LoadingScene.ToString());
+    }
+
+    /// <summary>
+    /// 通过Netcode切换场景 同步到所有客户端
+    /// </summary>
+    /// <param name="targetScene"></param>
+    public static void LoadNetwork(Scene targetScene)
+    {
+        NetworkManager.Singleton.SceneManager.LoadScene(targetScene.ToString(), LoadSceneMode.Single);
     }
     
     /// <summary>

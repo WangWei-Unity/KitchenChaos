@@ -60,7 +60,7 @@ public class DeliveryManager : NetworkBehaviour
     /// 通过ClientRpc让客户端订单与服务器一致
     /// </summary>
     /// <param name="waitingRecipeSOIndex"></param>
-    [ClientRpc]
+    [Rpc(SendTo.ClientsAndHost)]
     private void SpawnNewWaitingRecipeClientRpc(int waitingRecipeSOIndex)
     {
 
@@ -131,7 +131,7 @@ public class DeliveryManager : NetworkBehaviour
     /// <summary>
     /// 通过ClientRpc 让服务器把接收到的正确提交信息 传输给所有客户端
     /// </summary>
-    [ClientRpc]
+    [Rpc(SendTo.ClientsAndHost)]
     private void DeliveryCorrectRecipeClientRpc(int waitingRecipeSOListIndex)
     {
         successfulRecipesAmount++;
@@ -155,7 +155,7 @@ public class DeliveryManager : NetworkBehaviour
     /// <summary>
     /// 通过ClientRpc 让服务器把接收到的不正确提交信息 传输给所有客户端
     /// </summary>
-    [ClientRpc]
+    [Rpc(SendTo.ClientsAndHost)]
     private void DeliveryIncorrectRecipeClientRpc()
     {
         OnRecipeFailed?.Invoke(this, EventArgs.Empty);
