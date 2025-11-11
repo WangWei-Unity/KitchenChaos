@@ -48,7 +48,8 @@ public class Player : NetworkBehaviour, IKitchenObjectParent
 
     //玩家子物体对应的模型位置
     //用于处理旋转逻辑
-    [SerializeField] private Transform playerVisual;
+    [SerializeField] private Transform playerVisualTransform;
+    [SerializeField] private PlayerVisual playerVisual;
     //拾取物体放置的位置
     [SerializeField] private Transform kitchenObjectPoint;
     [SerializeField] private List<Vector3> spawnPositionList;
@@ -69,6 +70,9 @@ public class Player : NetworkBehaviour, IKitchenObjectParent
 
         GameInput.Instance.OnInteractAction += GameInput_OnInteractAction;
         GameInput.Instance.OnInteractAlternateAction += GameInput_OnInteractAlternateAction;
+
+        PlayerData playerData = KitchenGameMultiplayer.Instance.GetPlayerDataFromClientId(OwnerClientId);
+        playerVisual.SetPlayerColor(KitchenGameMultiplayer.Instance.GetPlayerColor(playerData.colorId));
     }
 
     public override void OnNetworkSpawn()
@@ -79,7 +83,7 @@ public class Player : NetworkBehaviour, IKitchenObjectParent
             instance = this;
         }
 
-        this.transform.position = spawnPositionList[(int)OwnerClientId];
+        this.transform.position = spawnPositionList[KitchenGameMultiplayer.Instance.GetPlayerDataIndexFromClientId(OwnerClientId)];
 
         OnAnyPlayerSpawned?.Invoke(this, EventArgs.Empty);
 
@@ -252,7 +256,7 @@ public class Player : NetworkBehaviour, IKitchenObjectParent
         //只有在移动状态才会 旋转
         if (moveDir != Vector3.zero)
         {
-            playerVisual.transform.rotation = Quaternion.Lerp(playerVisual.transform.rotation, Quaternion.LookRotation(moveDir), roundSpeed * Time.deltaTime);
+            playerVisualTransform.transform.rotation = Quaternion.Lerp(playerVisualTransform.transform.rotation, Quaternion.LookRotation(moveDir), roundSpeed * Time.deltaTime);
             isWalking = true;
         }
         else
@@ -308,7 +312,7 @@ public class Player : NetworkBehaviour, IKitchenObjectParent
         //只有在移动状态才会 旋转
         if (moveDir != Vector3.zero)
         {
-            playerVisual.transform.rotation = Quaternion.Lerp(playerVisual.transform.rotation, Quaternion.LookRotation(moveDir), roundSpeed * Time.deltaTime);
+            playerVisualTransform.transform.rotation = Quaternion.Lerp(playerVisualTransform.transform.rotation, Quaternion.LookRotation(moveDir), roundSpeed * Time.deltaTime);
             isWalking = true;
         }
         else

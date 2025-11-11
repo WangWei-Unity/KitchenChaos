@@ -8,7 +8,6 @@ public class HostDisconnectedUI : MonoBehaviour
     public static HostDisconnectedUI Instance => instance;
 
     [SerializeField] private Button mainMenuButton;
-    private ulong cachedHostId;
 
     void Awake()
     {
@@ -17,7 +16,6 @@ public class HostDisconnectedUI : MonoBehaviour
 
     void Start()
     {
-        cachedHostId = NetworkManager.ServerClientId;
         NetworkManager.Singleton.OnClientDisconnectCallback += NetworkManager_OnClientDisconnectCallback;
 
         mainMenuButton.onClick.AddListener(() =>
@@ -53,9 +51,17 @@ public class HostDisconnectedUI : MonoBehaviour
         gameObject.SetActive(true);
         mainMenuButton.Select();
     }
-    
+
     public void Hide()
     {
         gameObject.SetActive(false);
+    }
+
+    void OnDestroy()
+    {
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientDisconnectCallback -= NetworkManager_OnClientDisconnectCallback;
+        }
     }
 }
