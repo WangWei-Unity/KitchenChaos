@@ -1,0 +1,29 @@
+using TMPro;
+using Unity.Services.Lobbies.Models;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class LobbyListSingleUI : MonoBehaviour
+{
+    [SerializeField] private TextMeshProUGUI lobbyNameText;
+
+    private Lobby lobby;
+
+    void Awake()
+    {
+        GetComponent<Button>().onClick.AddListener(() =>
+        {
+            KitchenGameLobby.Instance.JoinWithId(lobby.Id);
+        });
+    }
+
+    /// <summary>
+    /// 设置当前大厅的名字
+    /// </summary>
+    /// <param name="lobby"></param>
+    public void SetLobby(Lobby lobby)
+    {
+        this.lobby = lobby;
+        lobbyNameText.text = lobby.Name;
+    }
+}

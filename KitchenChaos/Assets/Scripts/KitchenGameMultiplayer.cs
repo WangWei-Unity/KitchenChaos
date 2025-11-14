@@ -2,12 +2,14 @@ using System;
 using System.Collections.Generic;
 using Unity.IO.LowLevel.Unsafe;
 using Unity.Netcode;
+using Unity.Services.Authentication;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class KitchenGameMultiplayer : NetworkBehaviour
 {
-    private const int MAX_PLAYER_AMOUNT = 4;
+    public const int MAX_PLAYER_AMOUNT = 4;
+    private const string PLAYER_PREFS_PLAYER_NAME_MULTIPLAYER = "PlayerNameMultiplayer";
 
     private static KitchenGameMultiplayer instance;
 
@@ -15,6 +17,8 @@ public class KitchenGameMultiplayer : NetworkBehaviour
 
     [SerializeField] private KitchenObjectListSO kitchenObjectListSO;
     [SerializeField] private List<Color> playerColorList;
+
+    public static bool playMultiplayer;
 
     //玩家试图连接游戏时执行的事件
     public event EventHandler OnTryingToJoinGame;
@@ -24,6 +28,7 @@ public class KitchenGameMultiplayer : NetworkBehaviour
     public event EventHandler OnPlayerDataNetworkListChanged;
 
     private NetworkList<PlayerData> playerDataNetworkList;
+    private string playerName;
 
 
     void Awake()
@@ -32,8 +37,39 @@ public class KitchenGameMultiplayer : NetworkBehaviour
 
         DontDestroyOnLoad(gameObject);
 
+        playerName = PlayerPrefs.GetString(PLAYER_PREFS_PLAYER_NAME_MULTIPLAYER, "PlayerName" + UnityEngine.Random.Range(100, 1000));
+
         playerDataNetworkList = new NetworkList<PlayerData>();
         playerDataNetworkList.OnListChanged += PlayerDataNetworkList_OnListChanged;
+    }
+
+    void Start()
+    {
+        //如果是单人游戏 直接StartHost然后跳转界面
+        if (!playMultiplayer)
+        {
+            StartHost();
+            Loader.LoadNetwork(Loader.Scene.GameScene);
+        }
+    }
+
+    /// <summary>
+    /// 获得本地玩家名字
+    /// </summary>
+    /// <returns></returns>
+    public string GetPlayerName()
+    {
+        return playerName;
+    }
+
+    /// <summary>
+    /// 设置本地玩家名字
+    /// </summary>
+    /// <param name="playerName"></param>
+    public void SetPlayerName(string playerName)
+    {
+        this.playerName = playerName;
+        PlayerPrefs.SetString(PLAYER_PREFS_PLAYER_NAME_MULTIPLAYER, playerName);
     }
 
     /// <summary>
@@ -87,6 +123,8 @@ public class KitchenGameMultiplayer : NetworkBehaviour
             clientId = clientId,
             colorId = GetFirstUnusedColorId()
         });
+        SetPlayerNameServerRpc(playerName);
+        SetPlayerIdServerRpc(AuthenticationService.Instance.PlayerId);
     }
 
     /// <summary>
@@ -134,6 +172,8 @@ public class KitchenGameMultiplayer : NetworkBehaviour
 
         //无法正常连接执行的事件
         NetworkManager.Singleton.OnClientDisconnectCallback += NetworkManager_Client_OnClientDisconnectCallback;
+        //玩家连接后执行的事件
+        NetworkManager.Singleton.OnClientConnectedCallback += NetworkManager_Server_OnClientConnectedCallback;
 
         NetworkManager.Singleton.StartClient();
     }
@@ -141,6 +181,44 @@ public class KitchenGameMultiplayer : NetworkBehaviour
     private void NetworkManager_Client_OnClientDisconnectCallback(ulong clientId)
     {
         OnFailedToJoinGame?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void NetworkManager_Server_OnClientConnectedCallback(ulong clientId)
+    {
+        SetPlayerNameServerRpc(GetPlayerName());
+        SetPlayerIdServerRpc(AuthenticationService.Instance.PlayerId);
+    }
+
+    /// <summary>
+    /// 通过ServerRpc传给服务器玩家名字变化的信息
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void SetPlayerNameServerRpc(string playerName, RpcParams rpcParams = default)
+    {
+        int playerDataIndex = GetPlayerDataIndexFromClientId(rpcParams.Receive.SenderClientId);
+
+        //playerDataNetworkList[playerDataIndex]不能直接修改
+        PlayerData playerData = playerDataNetworkList[playerDataIndex];
+
+        playerData.playerName = playerName;
+
+        playerDataNetworkList[playerDataIndex] = playerData;
+    }
+
+    /// <summary>
+    /// 通过ServerRpc传给服务器玩家Id变化的信息
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void SetPlayerIdServerRpc(string playerId, RpcParams rpcParams = default)
+    {
+        int playerDataIndex = GetPlayerDataIndexFromClientId(rpcParams.Receive.SenderClientId);
+
+        //playerDataNetworkList[playerDataIndex]不能直接修改
+        PlayerData playerData = playerDataNetworkList[playerDataIndex];
+
+        playerData.playerId = playerId;
+
+        playerDataNetworkList[playerDataIndex] = playerData;
     }
 
     /// <summary>

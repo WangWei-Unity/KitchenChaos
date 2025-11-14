@@ -20,7 +20,7 @@ public class CharacterSelectReady : NetworkBehaviour
 
         playerReadyDictionary = new Dictionary<ulong, bool>();
     }
-
+    
     /// <summary>
     /// 发送准备就绪的信息
     /// </summary>
@@ -51,6 +51,7 @@ public class CharacterSelectReady : NetworkBehaviour
 
         if (allClientsReady)
         {
+            KitchenGameLobby.Instance.DeleteLobby();
             Loader.LoadNetwork(Loader.Scene.GameScene);
         }
     }
